@@ -1,3 +1,7 @@
+export 'src/database/db_writer.dart';
+export 'src/logging_strategy/all_data_strategy.dart';
+export 'src/logging_strategy/data_requester.dart';
+
 class LoggingType {
   static LoggingType allData = const LoggingType._();
 
@@ -23,3 +27,4 @@ class Database {
 
   Database(this.name, this.path);
 }
+

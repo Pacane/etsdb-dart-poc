@@ -7,43 +7,6 @@ import 'package:test/test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:dslink/dslink.dart';
 
-class DbWriter {
-  Future<Null> writeData(ValueUpdate update) async {}
-}
-
-class AllDataStrategy {
-  final DbWriter dbWriter;
-  final DataRequester dataRequester;
-
-  AllDataStrategy(this.dbWriter, this.dataRequester);
-
-  Future<Null> initialize(String pathToWatch) async {
-    dataRequester
-        .subscribe(pathToWatch)
-        .listen((ValueUpdate update) => dbWriter.writeData(update));
-  }
-}
-
-abstract class DataRequester {
-  Stream<ValueUpdate> subscribe(String path);
-}
-
-class DSLinkDataRequester extends DataRequester {
-  final Requester requester;
-  final DbWriter dbWriter;
-
-  DSLinkDataRequester(this.requester, this.dbWriter);
-
-  @override
-  Stream<ValueUpdate> subscribe(String path) {
-    var controller = new StreamController<ValueUpdate>();
-
-    requester.subscribe(path, (ValueUpdate u) => controller.add(u));
-
-    return controller.stream;
-  }
-}
-
 class MockDataRequester extends Mock implements DataRequester {}
 
 class MockDbWriter extends Mock implements DbWriter {}
