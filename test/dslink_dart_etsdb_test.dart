@@ -51,7 +51,8 @@ void main() {
 
       fakeData.forEach((ValueUpdate u) => fakeSubscription.add(u));
 
-      verifyInOrder(fakeData.map((ValueUpdate u) => dbWriter.writeData(u)));
+      verifyInOrder(
+          fakeData.map((ValueUpdate u) => dbWriter.writeData(pathToWatch, u)));
     });
   });
 

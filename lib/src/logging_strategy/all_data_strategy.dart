@@ -13,6 +13,6 @@ class AllDataStrategy {
   Future<Null> initialize(String pathToWatch) async {
     dataRequester
         .subscribe(pathToWatch)
-        .listen((ValueUpdate update) => dbWriter.writeData(update));
+        .listen((ValueUpdate update) => dbWriter.writeData(pathToWatch, update));
   }
 }
