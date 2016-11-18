@@ -12,6 +12,8 @@ class MockDataRequester extends Mock implements DataRequester {}
 class MockDbWriter extends Mock implements DbWriter {}
 
 void main() {
+  final String pathToWatch = '/data/path';
+
   test('watch group default logging strategy is allData', () {
     var sut = new WatchGroup();
 
@@ -19,11 +21,11 @@ void main() {
   });
 
   group("AllData strategy", () {
-    final String pathToWatch = '/data/path';
     StreamController<ValueUpdate> fakeSubscription;
     DbWriter dbWriter;
     DataRequester dataRequester;
     AllDataStrategy sut;
+
     setUp(() {
       dbWriter = new MockDbWriter();
 
@@ -54,12 +56,15 @@ void main() {
       verifyInOrder(
           fakeData.map((ValueUpdate u) => dbWriter.writeData(pathToWatch, u)));
     });
-  });
 
-  test('allData logging strategy takes all values from subscription', () async {
-//    var sut = new WatchGroup();
-//    var loggingStrategy = new AllDataStrategy();
-//
-//    expect(sut.loggingType, LoggingType.allData);
+    test('Unsubscribes to data stream when logging stops', () async {
+      final fakeData = new List.generate(10, (i) => new ValueUpdate(i));
+      await sut.initialize(pathToWatch);
+      fakeData.forEach((ValueUpdate u) => fakeSubscription.add(u));
+
+      await sut.stopLogging();
+
+      verify(dataRequester.unsubscribe(pathToWatch));
+    });
   });
 }
