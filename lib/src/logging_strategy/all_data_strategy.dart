@@ -1,10 +1,11 @@
 import '../database/db_writer.dart';
 import 'dart:async';
 import 'data_requester.dart';
+import 'logging_strategy.dart';
 
 import 'package:dslink/common.dart';
 
-class AllDataStrategy {
+class AllDataStrategy extends LoggingStrategy {
   final DbWriter dbWriter;
   final DataRequester dataRequester;
   final Set<String> watchedPaths = new Set<String>();
@@ -12,6 +13,7 @@ class AllDataStrategy {
 
   AllDataStrategy(this.dbWriter, this.dataRequester);
 
+  @override
   Future<Null> logPaths(List<String> pathsToWatch) async {
     watchedPaths.addAll(pathsToWatch);
 
@@ -25,6 +27,7 @@ class AllDataStrategy {
     });
   }
 
+  @override
   Future<Null> stopLogging() async {
     for (var path in watchedPaths) {
       await dataRequester.unsubscribe(path);
