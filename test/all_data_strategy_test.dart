@@ -73,16 +73,15 @@ void main() {
       }
     });
 
-    test('Strategy handles duplicate subscriptions', () async {
+    test('Strategy handles duplicate subscriptions without throwing', () async {
       await sut.logPaths(paths);
       await sut.logPaths(paths);
     });
 
-    test('Strategy handles start/stop/start scenario', () async {
+    test('Strategy handles start/stop/start scenario without throwing',
+        () async {
       await sut.logPaths(paths);
-
       await sut.stopLogging();
-
       stubSubscriptionsWithFakeData();
 
       await sut.logPaths(paths);
