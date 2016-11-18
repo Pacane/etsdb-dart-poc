@@ -7,19 +7,21 @@ import 'package:dslink/common.dart';
 class AllDataStrategy {
   final DbWriter dbWriter;
   final DataRequester dataRequester;
-  String watchedPath;
+  final Set<String> watchedPaths = new Set<String>();
 
   AllDataStrategy(this.dbWriter, this.dataRequester);
 
-  Future<Null> initialize(String pathToWatch) async {
-    this.watchedPath = pathToWatch;
+  Future<Null> logPaths(List<String> pathsToWatch) async {
+    watchedPaths.addAll(pathsToWatch);
 
-    dataRequester
-        .subscribe(pathToWatch)
-        .listen((ValueUpdate update) => dbWriter.writeData(pathToWatch, update));
+    watchedPaths.forEach((String path) => dataRequester
+        .subscribe(path)
+        .listen((ValueUpdate update) => dbWriter.writeData(path, update)));
   }
 
   Future<Null> stopLogging() async {
-    await dataRequester.unsubscribe(watchedPath);
+    for (var path in watchedPaths) {
+      await dataRequester.unsubscribe(path);
+    }
   }
 }

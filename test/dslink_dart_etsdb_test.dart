@@ -12,8 +12,6 @@ class MockDataRequester extends Mock implements DataRequester {}
 class MockDbWriter extends Mock implements DbWriter {}
 
 void main() {
-  final String pathToWatch = '/data/path';
-
   test('watch group default logging strategy is allData', () {
     var sut = new WatchGroup();
 
@@ -21,50 +19,80 @@ void main() {
   });
 
   group("AllData strategy", () {
-    StreamController<ValueUpdate> fakeSubscription;
     DbWriter dbWriter;
     DataRequester dataRequester;
     AllDataStrategy sut;
 
-    setUp(() {
-      dbWriter = new MockDbWriter();
+    group('Multiple paths', () {
+      List<String> paths = ['path1', 'path2'];
+      Map<String, StreamController<ValueUpdate>> fakeSubscriptions = {};
+      Map<String, List<ValueUpdate>> fakeData = {};
 
-      fakeSubscription = new StreamController<ValueUpdate>(sync: true);
-      dataRequester = new MockDataRequester();
-      when(dataRequester.subscribe(pathToWatch))
-          .thenReturn(fakeSubscription.stream);
+      setUp(() {
+        dbWriter = new MockDbWriter();
 
-      sut = new AllDataStrategy(dbWriter, dataRequester);
-    });
+        dataRequester = new MockDataRequester();
 
-    tearDown(() async {
-      await fakeSubscription.close();
-    });
+        for (var path in paths) {
+          fakeSubscriptions[path] = new StreamController(sync: true);
+          fakeData[path] = new List.generate(10, (i) => new ValueUpdate(i));
+          when(dataRequester.subscribe(path))
+              .thenReturn(fakeSubscriptions[path].stream);
+        }
 
-    test('Subscribes to all data of a given path', () async {
-      await sut.initialize(pathToWatch);
+        sut = new AllDataStrategy(dbWriter, dataRequester);
+      });
 
-      verify(dataRequester.subscribe(pathToWatch));
-    });
+      tearDown(() async {
+        for (var sub in fakeSubscriptions.values) {
+          await sub.close();
+        }
 
-    test('Writes to database every value in the subscription', () async {
-      final fakeData = new List.generate(10, (i) => new ValueUpdate(i));
-      await sut.initialize(pathToWatch);
+        fakeSubscriptions.clear();
+        fakeData.clear();
+      });
 
-      fakeData.forEach((ValueUpdate u) => fakeSubscription.add(u));
+      test('Subscribes to all data of a given path', () async {
+        await sut.logPaths(paths);
 
-      verifyInOrder(
-          fakeData.map((ValueUpdate u) => dbWriter.writeData(pathToWatch, u)));
-    });
+        for (var path in paths) {
+          verify(dataRequester.subscribe(path));
+        }
+      });
 
-    test('Unsubscribes to data stream when logging stops', () async {
-      final fakeData = new List.generate(10, (i) => new ValueUpdate(i));
-      await sut.initialize(pathToWatch);
-      fakeData.forEach((ValueUpdate u) => fakeSubscription.add(u));
+      test('Writes to database every value in the subscription', () async {
+        await sut.logPaths(paths);
 
-      await sut.stopLogging();
+        sendAllFakeData(paths, fakeData, fakeSubscriptions);
 
-      verify(dataRequester.unsubscribe(pathToWatch));
+        for (var path in paths) {
+          verifyInOrder(fakeData[path]
+              .map((ValueUpdate u) => dbWriter.writeData(path, u)));
+        }
+      });
+
+      test('Unsubscribes from data stream when logging stops', () async {
+        await sut.logPaths(paths);
+
+        sendAllFakeData(paths, fakeData, fakeSubscriptions);
+
+        await sut.stopLogging();
+
+        for (var path in paths) {
+          verify(dataRequester.unsubscribe(path));
+        }
+      });
     });
   });
+}
+
+void sendAllFakeData(
+    List<String> paths,
+    Map<String, List<ValueUpdate>> fakeData,
+    Map<String, StreamController<ValueUpdate>> fakeSubscriptions) {
+  for (var path in paths) {
+    for (var value in fakeData[path]) {
+      fakeSubscriptions[path].add(value);
+    }
+  }
 }

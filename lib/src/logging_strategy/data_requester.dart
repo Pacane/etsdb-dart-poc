@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dslink/common.dart';
 import 'package:dslink/requester.dart';
+
 abstract class DataRequester {
   Stream<ValueUpdate> subscribe(String path);
 
